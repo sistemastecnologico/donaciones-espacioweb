@@ -6,7 +6,7 @@ from groq import Groq
 app = Flask(__name__)
 CORS(app)
 
-# Esta línea busca la llave que guardaste en el panel negro de Render
+# Busca la llave que configuramos en Render
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 @app.route("/")
@@ -25,13 +25,12 @@ def chat():
             messages=[{"role": "user", "content": mensaje}]
         )
         
-        # CORRECCIÓN AQUÍ: Extraemos el texto correctamente
+        # ESTA ES LA CORRECCIÓN CRÍTICA:
         respuesta_ia = completion.choices[0].message.content
         return jsonify({"respuesta": respuesta_ia})
         
     except Exception as e:
-        # Esto te dirá el error real en los logs de Render
-        print(f"ERROR CRÍTICO: {e}")
+        print(f"Error detectado: {e}")
         return jsonify({"respuesta": "La IA no responde. Revisa si guardaste la llave en Render."})
 
 if __name__ == "__main__":
