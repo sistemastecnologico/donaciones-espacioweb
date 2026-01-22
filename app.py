@@ -1,48 +1,60 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_cors import CORS
 from groq import Groq
+from authlib.integrations.flask_client import OAuth
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "billonario_master_777")
 CORS(app)
 
-# Configuración del cliente con el nombre de variable estándar
-# ASEGÚRATE de que en Render el nombre sea: GROQ_API_KEY
-api_key = os.environ.get("GROQ_API_KEY")
-client = Groq(api_key=api_key)
+# --- Configuración Google Login ---
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+    client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'}
+)
+
+# --- Cerebro IA ---
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 @app.route("/")
 def index():
-    # Carga tu portafolio de billonario con los $10,000.00
-    return render_template("dashboard.html")
+    user = session.get('user')
+    return render_template("dashboard.html", user=user)
+
+@app.route('/login')
+def login():
+    return google.authorize_redirect(url_for('authorize', _external=True))
+
+@app.route('/authorize')
+def authorize():
+    token = google.authorize_access_token()
+    user_info = google.parse_id_token(token)
+    session['user'] = user_info['email']
+    return redirect(url_for('index'))
 
 @app.route("/chat", methods=["POST"])
 def chat():
     try:
-        data = request.json
-        mensaje = data.get("mensaje")
-        
-        if not mensaje:
-            return jsonify({"respuesta": "Escribe algo para poder ayudarte."})
-
-        # MODELO ACTUALIZADO: llama-3.3-70b-versatile
-        # El anterior (llama3-8b-8192) ya no funciona
+        if 'user' not in session:
+            return jsonify({"respuesta": "Inicia sesión para activar la terminal financiera."})
+        mensaje = request.json.get("mensaje")
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "Eres un asistente experto en finanzas y tecnología."},
+                {"role": "system", "content": f"Asistente financiero de {session['user']}. Portfolio: $10,000."},
                 {"role": "user", "content": mensaje}
             ]
         )
-        
-        respuesta_ia = completion.choices[0].message.content
-        return jsonify({"respuesta": respuesta_ia})
-        
+        return jsonify({"respuesta": completion.choices[0].message.content})
     except Exception as e:
-        print(f"Error crítico: {e}")
-        return jsonify({"respuesta": f"Error de conexión: Verifica que GROQ_API_KEY esté bien en Render."})
+        return jsonify({"respuesta": f"Error: {str(e)}"})
 
 if __name__ == "__main__":
-    # Puerto dinámico para Render
-    port = int(os.environ.get("PORT", 5000))
+    # Render usa el puerto 10000; si no está, usa el 5000
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
