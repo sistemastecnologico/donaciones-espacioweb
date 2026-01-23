@@ -8,12 +8,18 @@
     <style>
         :root { --solana-teal: #14F195; --solana-purple: #9945FF; --bg: #050505; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', monospace; margin: 0; padding: 20px; }
+        
+        /* Barra de Navegación Profesional */
+        .navbar { display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto 20px auto; padding: 10px; border-bottom: 1px solid #222; }
+        .user-status { font-size: 13px; color: var(--solana-teal); }
+        .login-btn { text-decoration: none; color: white; background: var(--solana-purple); padding: 5px 15px; border-radius: 4px; font-size: 12px; }
+
         .container { max-width: 1100px; margin: auto; display: grid; grid-template-columns: 1fr 350px; gap: 20px; }
         .card { background: #111; border: 1px solid #222; border-radius: 12px; padding: 20px; }
         .premium-box { border: 2px solid var(--solana-teal); background: rgba(20, 241, 149, 0.05); text-align: center; }
         h1, h2 { color: var(--solana-teal); margin-top: 0; font-size: 16px; letter-spacing: 1px; }
         .balance { font-size: 35px; color: #fff; font-weight: bold; margin: 10px 0; }
-        #chat-box { height: 450px; overflow-y: auto; background: #000; padding: 15px; border: 1px solid #222; margin-bottom: 15px; border-radius: 8px; font-size: 14px; }
+        #chat-box { height: 450px; overflow-y: auto; background: #000; padding: 15px; border: 1px solid #222; margin-bottom: 15px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
         .input-group { display: flex; gap: 10px; }
         input { flex-grow: 1; background: #1a1a1a; border: 1px solid #333; color: var(--solana-teal); padding: 12px; border-radius: 6px; outline: none; }
         .btn { background: var(--solana-purple); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
@@ -22,12 +28,25 @@
     </style>
 </head>
 <body>
+    <div class="navbar">
+        <div style="font-weight: bold; color: var(--solana-purple);">SOLANA_CORE_SYSTEM</div>
+        <div class="user-status">
+            {% if user %}
+                CONECTADO: {{ user }} | <a href="/logout" style="color:red; text-decoration:none;">DESCONECTAR</a>
+            {% else %}
+                MODO_INVITADO | <a href="/login" class="login-btn">INICIAR SESIÓN CON GOOGLE</a>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="container">
         <div class="card">
             <h2>CONSULTORÍA IA & ANÁLISIS DE DATOS</h2>
-            <div id="chat-box"></div>
+            <div id="chat-box">
+                <div style="color: #666;">Bienvenido a la terminal. Escribe tu consulta para comenzar el análisis...</div>
+            </div>
             <div class="input-group">
-                <input type="text" id="userInput" placeholder="Escribe consulta técnica...">
+                <input type="text" id="userInput" placeholder="Escribe consulta técnica y presiona Enter..." autocomplete="off">
                 <button class="btn" onclick="enviarChat()">EJECUTAR</button>
             </div>
         </div>
@@ -57,13 +76,22 @@
             height: 150
         });
 
+        // --- LÓGICA DEL BOTÓN ENTER (Lo que pediste) ---
+        const inputField = document.getElementById("userInput");
+        inputField.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Evita recarga de página
+                enviarChat();
+            }
+        });
+
         async function enviarChat() {
             const input = document.getElementById("userInput");
             const box = document.getElementById("chat-box");
-            if (!input.value) return;
+            if (!input.value || input.value === "PROCESANDO...") return;
 
-            box.innerHTML += `<div style="margin-bottom:12px;"><b>[USER]:</b> ${input.value}</div>`;
             const val = input.value;
+            box.innerHTML += `<div style="margin-bottom:12px;"><b>[USER]:</b> ${val}</div>`;
             input.value = "PROCESANDO...";
 
             try {
@@ -75,7 +103,7 @@
                 const data = await response.json();
                 box.innerHTML += `<div style="margin-bottom:20px; color:var(--solana-purple);"><b>[IA]:</b> ${data.respuesta}</div>`;
             } catch (e) {
-                box.innerHTML += `<div style="color:red;">Error de conexión.</div>`;
+                box.innerHTML += `<div style="color:red;">Error de conexión con el núcleo de IA.</div>`;
             }
             input.value = "";
             box.scrollTop = box.scrollHeight;
