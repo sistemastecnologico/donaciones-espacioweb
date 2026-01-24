@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from groq import Groq
 
 app = Flask(__name__)
@@ -7,8 +7,8 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 @app.route("/")
 def index():
-    # Carga el Dashboard Negro con Donaciones Crypto
-    return render_template("dashboard.html")
+    # SOLUCIÓN TÉCNICA: Esto obliga a Chrome a cargar el diseño negro, no el texto plano
+    return Response(render_template("dashboard.html"), mimetype='text/html')
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -16,33 +16,26 @@ def chat():
         data = request.json
         mensaje = data.get("mensaje", "").lower()
         
-        # MOTOR DE IMÁGENES PROFESIONALES (Solo Ciencia/Finanzas)
-        if any(keyword in mensaje for keyword in ["imagen", "genera", "crea", "visualiza"]):
-            # Filtro de Élite: Bloqueo total de humanos, animales y morbo
-            filtro_billonario = (
-                "high-end scientific data visualization, financial market analysis charts, "
-                "medical research graphics, abstract mathematical numbers, 8k resolution, "
-                "dark mode aesthetic, NO humans, NO people, NO animals, NO organic life"
-            )
-            
-            prompt_final = f"{mensaje} - {filtro_billonario}"
-            url_imagen = f"https://pollinations.ai/p/{prompt_final.replace(' ', '_')}?width=1080&height=720&seed=77&model=flux"
-            
-            return jsonify({
-                "respuesta": "Generando reporte visual de alta fidelidad para análisis corporativo...",
-                "imagen": url_imagen
-            })
-
-        # IA DE CONSULTORÍA FORMAL
+        # IA DE CONSULTORÍA FORMAL (Llama 3.3 70B)
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": "Eres una IA de consultoría para empresas billonarias. Solo hablas de ciencia, medicina, análisis y finanzas con lenguaje formal."},
-                     {"role": "user", "content": mensaje}]
+            messages=[
+                {"role": "system", "content": "Eres una IA de consultoría de élite. Solo hablas de ciencia, medicina y finanzas con lenguaje formal técnico."},
+                {"role": "user", "content": mensaje}
+            ]
         )
-        return jsonify({"respuesta": completion.choices[0].message.content})
+        respuesta_texto = completion.choices[0].message.content
+
+        # MOTOR DE IMÁGENES CORPORATIVAS (Solo Ciencia y Finanzas)
+        if any(kw in mensaje for kw in ["imagen", "genera", "crea"]):
+            filtro = "scientific visualization, medical data research, financial analysis charts, 8k, dark terminal, NO humans"
+            url_imagen = f"https://pollinations.ai/p/{mensaje}_{filtro.replace(' ', '_')}?width=1080&height=720&seed=99"
+            return jsonify({"respuesta": respuesta_texto, "imagen": url_imagen})
+
+        return jsonify({"respuesta": respuesta_texto})
         
     except Exception as e:
-        return jsonify({"respuesta": f"Error en Terminal: {str(e)}"}), 500
+        return jsonify({"respuesta": f"Error de Terminal: {str(e)}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
