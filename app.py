@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from groq import Groq
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "billionaire_key_2026")
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 @app.route("/")
@@ -13,13 +14,15 @@ def index():
 def chat():
     try:
         data = request.json
-        mensaje = data.get("mensaje", "")
+        mensaje = data.get("mensaje", "").lower()
+        
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": mensaje}]
         )
-        respuesta = completion.choices[0].message.content
-        return jsonify({"respuesta": respuesta})
+        
+        respuesta_ia = completion.choices[0].message.content
+        return jsonify({"respuesta": respuesta_ia})
     except Exception as e:
         return jsonify({"respuesta": f"Error: {str(e)}"}), 500
 
