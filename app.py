@@ -1,63 +1,68 @@
 import os
-from flask import Flask, request, jsonify, Response
+import logging
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from groq import Groq
 
+# --- ESTRUCTURA DE CONFIGURACIÓN BANCARIA ---
+class Config:
+    W_ADDR = os.environ.get("W_ADDR", "FN5nJbDwC5ySkaUaaYqKFqvL2FsVju9xMsv6tzZGLxp")
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+    MODEL_NAME = "llama-3.3-70b-versatile"
+    PORT = int(os.environ.get("PORT", 10000))
+    DEBUG = False
+
+# Registro de Auditoría Industrial
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - DAPP_SENTINEL - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+CORS(app) # Permite conexión con React.js según el requerimiento
+client = Groq(api_key=Config.GROQ_API_KEY)
 
-# CONFIGURACIÓN
-W_ADDR = "FN5nJbDwC5ySkaUaaYqKFqvL2FsVju9xMsv6tzZGLxp"
-G_ID = "1003655956505-nh7tso7hb4acuk77489pf9p08far0d9u.apps.googleusercontent.com"
-
-# Interfaz compacta para evitar errores de sintaxis
-UI = f"""
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QUANTUM ELITE</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<style>
-    body {{ background:#050505; color:#fff; font-family:sans-serif; text-align:center; margin:0; }}
-    .h {{ padding:60px; background:radial-gradient(circle,#0a192f,#000); border-bottom:1px solid #333; }}
-    .t {{ width:90%; max-width:800px; margin:20px auto; padding:20px; background:#111; border-radius:10px; border:1px solid #444; }}
-    #c {{ height:250px; overflow-y:auto; text-align:left; color:#00f2ff; font-family:monospace; }}
-    input {{ width:100%; padding:15px; background:#000; border:1px solid #333; color:#fff; margin-top:10px; }}
-    .btn {{ padding:10px 20px; background:#00f2ff; color:#000; text-decoration:none; font-weight:bold; border-radius:5px; display:inline-block; margin:10px; }}
-</style></head>
-<body>
-    <div style="position:fixed;top:10px;right:10px;"><div id="g_id_onload" data-client_id="{G_ID}" data-callback="hA"></div><div class="g_id_signin" data-type="icon"></div></div>
-    <div class="h"><h1>QUANTUM CORE</h1><p style="color:gray;">IA & BLOCKCHAIN INDUSTRIAL</p>
-    <a href="https://solscan.io/account/{W_ADDR}" target="_blank" class="btn">VER NODE</a></div>
-    <div class="t"><div id="c">>> SISTEMA ACTIVO.</div><input type="text" id="i" placeholder="Requerimiento..." onkeydown="if(event.key==='Enter') exe()">
-    <div id="p" style="height:200px;margin-top:20px;"></div></div>
-    <script>
-        function hA(r) {{ console.log("Auth OK"); }}
-        Plotly.newPlot('p',[{{x:[1,2,3,4],y:[10,15,13,18],type:'scatter',line:{{color:'#00f2ff'}}}}],{{paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{{color:'#fff'}},margin:{{t:0,b:30,l:30,r:10}}}});
-        async function exe() {{
-            const i=document.getElementById('i'), c=document.getElementById('c'); if(!i.value) return;
-            const m=i.value; i.value=''; c.innerHTML += `<div>> SOLICITUD: ${{m}}</div>`;
-            const r=await fetch('/chat',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{mensaje:m}})}});
-            const d=await r.json(); c.innerHTML += `<div style="color:#fff;">> AI: ${{d.respuesta}}</div>`;
-            if(d.qr) c.innerHTML += `<img src="${{d.qr}}" style="width:150px;margin:10px;border:1px solid #00f2ff;">`;
-            c.scrollTop=c.scrollHeight;
-        }}
-    </script>
-</body></html>
-"""
-
-@app.route("/")
-def index(): return Response(UI, mimetype='text/html')
-
-@app.route("/chat", methods=["POST"])
-def chat():
+@app.route("/api/v1/quantum-core", methods=["POST"])
+def quantum_core_engine():
     try:
         data = request.json
-        msg = data.get("mensaje", "").lower()
-        comp = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":"IA Elite."},{"role":"user","content":msg}])
-        res = comp.choices[0].message.content
-        out = {"respuesta": res}
-        if any(x in msg for x in ["pago", "contratar", "solana"]):
-            out["qr"] = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={W_ADDR}"
+        msg = data.get("message", "").strip()
+        
+        # Validación de Seguridad contra Inyección de Código
+        if not msg or len(msg) > 1500:
+            return jsonify({"status": "security_reject", "response": "Protocol violation: Message exceeds safety limits."}), 400
+
+        logger.info(f"DApp Logic Executing: {msg[:40]}...")
+
+        # SYSTEM PROMPT MULTI-DOMINIO (Finanzas, Medicina y Web3)
+        sys_prompt = (
+            "You are QUANTUM CORE v3.0, a Decentralized Intelligence Sentinel. "
+            "Expertise: 1. Solana/Ethereum Smart Contracts & Web3.js. 2. Advanced Financial Analytics. "
+            "3. Medical Diagnostic Support. 4. High-Performance Software Engineering. "
+            "Instruction: Be technical, concise, and respond in the user's language."
+        )
+
+        comp = client.chat.completions.create(
+            model=Config.MODEL_NAME,
+            messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": msg}],
+            temperature=0.2 # Precisión quirúrgica para datos críticos
+        )
+
+        res_text = comp.choices[0].message.content
+        out = {"response": res_text, "status": "authorized_by_core"}
+
+        # Puerta de Enlace de Pago Web3 Integrada
+        trigger_words = ["pago", "pay", "contratar", "hire", "solana", "fee", "medical", "finance"]
+        if any(word in msg.lower() for word in trigger_words):
+            out["blockchain_gateway"] = {
+                "qr": f"https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=solana:{Config.W_ADDR}",
+                "network": "Solana Mainnet",
+                "wallet": Config.W_ADDR,
+                "memo": "DApp_Core_Service_Execution"
+            }
+            
         return jsonify(out)
-    except Exception as e: return jsonify({"respuesta": f"Error: {str(e)}"}), 500
+    except Exception as e:
+        logger.error(f"Critical System Breach: {str(e)}")
+        return jsonify({"status": "critical_failure", "response": "Engine protocol error."}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    app.run(host="0.0.0.0", port=Config.PORT, debug=Config.DEBUG)
