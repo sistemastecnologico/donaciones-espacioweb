@@ -13,7 +13,7 @@ app = Flask(__name__)
 CORS(app)
 client = Groq(api_key=Config.GROQ_API_KEY)
 
-# --- INTERFAZ ULTRA-COMPACTA PARA EVITAR CORTES DE CÓDIGO ---
+# INTERFAZ ELITE CON SOLANA PAY INTEGRADO
 HTML_TEMPLATE = """
 <!DOCTYPE html><html><head><meta charset="UTF-8"><title>QUANTUM PRIME</title>
 <style>
@@ -22,9 +22,10 @@ HTML_TEMPLATE = """
     .main { flex:1; padding:40px; background: radial-gradient(circle at top right, #001a33 0%, #050505 80%); display:flex; flex-direction:column; }
     .card { background:#0d0d0d; border:1px solid #1a1a1a; padding:15px; border-radius:10px; margin-bottom:15px; }
     .btn { background:#007aff; color:white; border:none; padding:12px; width:100%; border-radius:6px; font-weight:700; cursor:pointer; font-size:10px; text-transform:uppercase; }
-    .pay-link { display:block; text-decoration:none; background:#2775ca; color:white; padding:15px; border-radius:8px; font-weight:800; text-align:center; margin-top:15px; font-size:12px; }
+    .pay-link { display:block; text-decoration:none; background:#2775ca; color:white; padding:15px; border-radius:8px; font-weight:800; text-align:center; margin-top:15px; font-size:12px; transition: 0.3s; }
+    .pay-link:hover { background: #1e5ba3; box-shadow: 0 0 15px #2775ca; }
     #log { flex:1; overflow-y:auto; background:rgba(0,0,0,0.5); padding:20px; border-radius:10px; border:1px solid #1a1a1a; font-family:monospace; font-size:13px; color:#999; }
-    input { width:100%; padding:20px; background:#000; border:1px solid #1a1a1a; color:white; border-radius:10px; margin-top:20px; box-sizing:border-box; }
+    input { width:100%; padding:20px; background:#000; border:1px solid #1a1a1a; color:white; border-radius:10px; margin-top:20px; box-sizing:border-box; outline: none; }
 </style></head>
 <body>
     <div class="sidebar">
@@ -35,12 +36,12 @@ HTML_TEMPLATE = """
             <div style="background:white; padding:8px; border-radius:8px; width:130px; margin:0 auto 15px;">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=solana:{{addr}}" style="width:100%">
             </div>
-            <a href="solana:{{addr}}?label=Quantum_Fee&message=USDC_Solana_Payment" class="pay-link">PAY RETAINER (USDC)</a>
+            <a href="solana:{{addr}}?label=Quantum_Prime_Fee&message=USDC_Retainer_Payment" class="pay-link">PAY WITH USDC (SOLANA)</a>
         </div>
     </div>
     <div class="main">
-        <div id="log">>> SYSTEM READY.</div>
-        <input type="text" id="in" placeholder="Command..." onkeydown="if(event.key==='Enter') send()">
+        <div id="log">>> SYSTEM SECURE. READY.</div>
+        <input type="text" id="in" placeholder="Enter High-Level Command..." onkeydown="if(event.key==='Enter') send()">
     </div>
     <script>
         async function send() {
@@ -65,7 +66,7 @@ def quantum_core_engine():
     try:
         data = request.json
         msg = data.get("message", "").strip()
-        sys_msg = "You are QUANTUM PRIME, an elite AI architect for US Billionaires. Tone: Authoritative. Expertise: Finance and Software."
+        sys_msg = "You are QUANTUM PRIME, an elite AI for US Billionaires. Authority: Finance and Software."
         comp = client.chat.completions.create(model=Config.MODEL_NAME, messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": msg}], temperature=0.2)
         return jsonify({"response": comp.choices[0].message.content})
     except Exception as e: return jsonify({"status": "error", "response": str(e)}), 500
