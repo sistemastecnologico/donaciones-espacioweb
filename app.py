@@ -13,38 +13,40 @@ app = Flask(__name__)
 CORS(app)
 client = Groq(api_key=Config.GROQ_API_KEY)
 
+# INTERFAZ DE ALTA DISPONIBILIDAD - SIN CORTES DE CÓDIGO
 UI = """
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QUANTUM</title>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QUANTUM PRIME</title>
 <style>
- body{background:#020202;color:#eee;font-family:sans-serif;margin:0;display:flex;height:100vh}
+ body{background:#020205;color:#0f0;font-family:monospace;margin:0;display:flex;height:100vh}
  .side{width:280px;background:#000;border-right:1px solid #1a1a1a;padding:25px;display:flex;flex-direction:column}
- .main{flex:1;padding:40px;background:radial-gradient(circle at top right,#001a33 0%,#020202 80%);display:flex;flex-direction:column}
- .pay{display:block;text-decoration:none;background:#2775ca;color:#fff;padding:18px;border-radius:8px;font-weight:800;text-align:center;margin-top:20px;font-size:13px}
- #log{flex:1;overflow-y:auto;background:rgba(0,0,0,.5);padding:20px;border-radius:10px;border:1px solid #1a1a1a;font-family:monospace;font-size:13px;color:#999}
- input{width:100%;padding:20px;background:#000;border:1px solid #1a1a1a;color:#fff;border-radius:10px;margin-top:20px;box-sizing:border-box}
+ .main{flex:1;padding:40px;display:flex;flex-direction:column}
+ .card{background:#0d0d0d;border:1px solid #0f0;padding:12px;border-radius:5px;margin-bottom:10px;font-size:11px}
+ .pay{display:block;text-decoration:none;background:#0f0;color:#000;padding:15px;border-radius:5px;font-weight:900;text-align:center;margin-top:20px}
+ #log{flex:1;overflow-y:auto;background:rgba(0,0,0,0.9);padding:20px;border:1px solid #1a1a1a;font-size:13px}
+ input{width:100%;padding:15px;background:#000;border:1px solid #0f0;color:#0f0;margin-top:15px}
 </style></head><body>
 <div class="side">
- <h2 style="color:#007aff;font-size:14px">QUANTUM PRIME</h2>
- <div style="background:#0d0d0d;padding:15px;border-radius:10px;border:1px solid #1a1a1a">
-  <strong>ELITE ARCHITECT</strong><p style="font-size:10px;color:#555">Asset Scaling.</p>
- </div>
+ <h2>QUANTUM_CORE</h2>
+ <div class="card">SECTOR: CYBER-SEC<br>STATUS: ENCRYPTED</div>
+ <div class="card">SECTOR: BIOMED<br>STATUS: ANALYZING</div>
+ <div class="card">SECTOR: FINTECH<br>STATUS: SOL_READY</div>
  <div style="margin-top:auto;text-align:center">
-  <div style="background:#fff;padding:8px;border-radius:8px;width:120px;margin:0 auto 15px">
-   <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=solana:{{addr}}" style="width:100%">
+  <div style="background:#fff;padding:5px;border-radius:5px;width:110px;margin:0 auto">
+   <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=solana:{{addr}}" style="width:100%">
   </div>
-  <a href="solana:{{addr}}?label=Quantum_Fee&message=Institutional_Consulting" class="pay">OPEN WALLET</a>
+  <a href="solana:{{addr}}?label=Quantum_Premium&message=Cyber_Med_Consulting" class="pay">PAY PREMIUM</a>
  </div>
 </div>
 <div class="main">
- <div id="log">>> READY.</div>
- <input type="text" id="in" placeholder="Command..." onkeydown="if(event.key==='Enter')send()">
+ <div id="log">>> SYSTEM READY. AI ACTIVE.<br>>> NOTICE: AI MAY ERR. VERIFY ALL DATA.</div>
+ <input type="text" id="in" placeholder="Enter Command..." onkeydown="if(event.key==='Enter')send()">
 </div>
 <script>
  async function send(){
   const i=document.getElementById('in'),l=document.getElementById('log');if(!i.value)return;const m=i.value;i.value='';
-  l.innerHTML+=`<div style="color:#007aff;margin-top:15px">> ${m}</div>`;
+  l.innerHTML+=`<div style="color:#fff;margin-top:15px">> ${m}</div>`;
   const r=await fetch('/api/v1/quantum-core',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m})});
-  const d=await r.json();l.innerHTML+=`<div style="color:#eee;padding:10px 0;border-left:2px solid #007aff;padding-left:15px">> ${d.response}</div>`;
+  const d=await r.json();l.innerHTML+=`<div>> ${d.response}</div>`;
   l.scrollTop=l.scrollHeight
  }
 </script></body></html>
@@ -57,7 +59,8 @@ def index(): return render_template_string(UI, addr=Config.W_ADDR)
 def quantum_core_engine():
     try:
         data = request.json
-        comp = client.chat.completions.create(model=Config.MODEL_NAME, messages=[{"role": "system", "content": "You are QUANTUM PRIME, an elite AI for Billionaires."}, {"role": "user", "content": data.get("message", "")}], temperature=0.2)
+        sys = "You are QUANTUM PRIME. Expert in Cyber-Security, Medicine, and Finance. Accurate and direct."
+        comp = client.chat.completions.create(model=Config.MODEL_NAME, messages=[{"role": "system", "content": sys}, {"role": "user", "content": data.get("message", "")}], temperature=0.1)
         return jsonify({"response": comp.choices[0].message.content})
     except Exception as e: return jsonify({"status":"error","response":str(e)}), 500
 
